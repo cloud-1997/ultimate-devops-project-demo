@@ -1,6 +1,8 @@
 # Copyright The OpenTelemetry Authors
 # SPDX-License-Identifier: Apache-2.0
 
+# Build from the root directory:
+# docker build -f src/frontend/Dockerfile -t frontend:v1 .
 
 FROM node:20-alpine AS deps
 RUN apk add --no-cache libc6-compat
@@ -40,7 +42,7 @@ COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
 USER nextjs
 
-ENV PORT=8080
+ENV PORT=8089
 EXPOSE ${PORT}
 
 ENTRYPOINT ["npm", "start"]

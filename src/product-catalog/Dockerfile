@@ -1,31 +1,35 @@
-FROM golang:1.22-alpine AS builder
+# Use the official Golang image as the base image
+FROM golang:1.22 AS builder
 
-WORKDIR /usr/src/app/
+# Set the working directory inside the container
+WORKDIR /app
 
-# Use Go build cache for dependencies
-RUN --mount=type=cache,target=/go/pkg/mod \
-    --mount=type=cache,target=/root/.cache/go-build \
-    mkdir -p /root/.cache/go-build
-
-# Copy
+# Copy the Go modules manifests
 COPY go.mod go.sum ./
 
-# Download
+# Download Go modules
 RUN go mod download
 
-# Copy the rest of the source code
+# Copy the source code
 COPY . .
 
-RUN go build -o product-catalog .
+# Tidy up Go modules
+RUN go mod tidy
 
-####################################
+# Build the Go application
+RUN go build -o product-catalog main.go
 
-FROM alpine AS release
+# Use a minimal base image for the final container
+FROM gcr.io/distroless/base-debian11
 
-WORKDIR /usr/src/app/
+# Set the working directory inside the container
+WORKDIR /app
 
-COPY ./products/ ./products/
-COPY --from=builder /usr/src/app/product-catalog/ ./
+# Copy the compiled binary from the builder stage
+COPY --from=builder /app/product-catalog .
 
-ENV PRODUCT_CATALOG_PORT=8088
-ENTRYPOINT [ "./product-catalog" ]
+# Expose the port the application runs on
+EXPOSE 8080
+
+# Command to run the executable
+CMD ["/app/product-catalog"]
